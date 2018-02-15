@@ -1,6 +1,6 @@
 
 from passlib.hash import md5_crypt
-
+from passlib.hash import sha256_crypt
 
 class CiscoPassword(object):
     def __init__(self):
@@ -12,6 +12,12 @@ class CiscoPassword(object):
         """
 
         return md5_crypt.encrypt(clear_secret)
+
+    def secret5_sha256(self, clear_secret):
+        """ take clear_secret and return a cisco type 5, SHA256 hash
+        """
+
+        return sha256_crypt.using(rounds=5000, salt_size=6).hash(clear_secret)
 
     def decrypt7(self, clear_7):
         """ decrypt cisco level 7 password
@@ -45,12 +51,16 @@ class CiscoPassword(object):
         secret = '$2' + self.secret5(clear_secret)[2:]
         return 'set password {}\nset enablepass {}'.format(secret, secret)
 
-    def gen_nxos(self, clear_secret, user='admin'):
+    def gen_nxos(self, clear_secret, user='admin', sha256=False):
         """ generate a cisco NXOS admin password string
         """
 
-        secret = self.secret5(clear_secret)
-        return 'username {user} password 5 {secret}  role network-admin'.format(user=user, secret=secret)
+        if sha256:
+            secret = self.secret5_sha256(clear_secret)
+            return 'username {user} password 5 {secret}  role network-admin'.format(user=user, secret=secret)
+        else:
+            secret = self.secret5(clear_secret)
+            return 'username {user} password 5 {secret}  role network-admin'.format(user=user, secret=secret)
 
     def gen_ace(self, clear_secret, user):
         """ generate a cisco ACE admin password string
